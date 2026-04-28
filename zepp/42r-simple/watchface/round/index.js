@@ -15,7 +15,7 @@
 // callbacks fired or didn't during the stuck window.
 
 import { log } from '@zos/utils'
-import { Time } from '@zos/sensor'
+import { Time, Step } from '@zos/sensor'
 import { getTimeFormat, TIME_FORMAT_24 } from '@zos/settings'
 import ui from '@zos/ui'
 
@@ -29,6 +29,11 @@ const TIME_HEIGHT = 168
 const DATE_HEIGHT = 80
 const DATE_Y = 97
 const DATE_TEXT_SIZE = 46
+// Step strip below the time, mirrored in size and placement against the
+// date strip above. Same height, same text size, same color.
+const STEP_HEIGHT = 80
+const STEP_Y = 289
+const STEP_TEXT_SIZE = 46
 const BACKUP_TICK_MS = 60_000
 
 const MONTHS = [
@@ -59,6 +64,12 @@ function formatHHMM(time) {
   return h12 + ':' + pad(m)
 }
 
+function formatSteps(n) {
+  // Comma-group thousands. 8432 -> "8,432". Avoiding toLocaleString since
+  // QuickJS does not reliably support full Intl.
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ',')
+}
+
 function formatDate(time) {
   // Zepp Time.getMonth() convention is undocumented in the version of the
   // SDK we have on hand. Some embedded JS runtimes return 1-12 (calendar
@@ -81,6 +92,7 @@ WatchFace({
   initView() {
     logger.log(`[${nowStamp()}] initView — creating widgets + subscribing`)
     this.timeSensor = new Time()
+    this.stepSensor = new Step()
 
     // One-time diagnostic so we can verify month indexing + 12/24h reading.
     logger.log(
@@ -118,6 +130,19 @@ WatchFace({
       text_style: ui.text_style.NOWRAP,
     })
 
+    this.stepText = ui.createWidget(ui.widget.TEXT, {
+      text: formatSteps(this.stepSensor.getCurrent()),
+      x: 0,
+      y: STEP_Y,
+      w: DESIGN_WIDTH,
+      h: STEP_HEIGHT,
+      color: COLOR_WHITE,
+      text_size: STEP_TEXT_SIZE,
+      align_h: ui.align.CENTER_H,
+      align_v: ui.align.CENTER_V,
+      text_style: ui.text_style.NOWRAP,
+    })
+
     this.timeSensor.onPerMinute(() => {
       logger.log(`[${nowStamp()}] onPerMinute fired`)
       this.updateDisplay()
@@ -130,13 +155,18 @@ WatchFace({
   },
 
   updateDisplay() {
-    if (!this.timeSensor || !this.timeText || !this.dateText) return
+    if (!this.timeSensor || !this.timeText || !this.dateText || !this.stepText) return
     this.timeText.setProperty(ui.prop.MORE, {
       text: formatHHMM(this.timeSensor),
     })
     this.dateText.setProperty(ui.prop.MORE, {
       text: formatDate(this.timeSensor),
     })
+    if (this.stepSensor) {
+      this.stepText.setProperty(ui.prop.MORE, {
+        text: formatSteps(this.stepSensor.getCurrent()),
+      })
+    }
   },
 
   onInit() {
