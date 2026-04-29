@@ -1,0 +1,48 @@
+{
+  "configVersion": "v3",
+  "app": {
+    "appId": 23157,
+    "appName": "42R - Four Simple",
+    "appType": "watchface",
+    "version": {
+      "code": 1,
+      "name": "0.1.0"
+    },
+    "vender": "FourTwoRun",
+    "description": "Brand-watermark watch face for Four — the Four logo dimmed as a backdrop, with HH:MM, date, and step count layered on top.",
+    "icon": "images/preview.png"
+  },
+  "permissions": ["data:user.hd.step"],
+  "runtime": {
+    "apiVersion": {
+      "compatible": "2.1",
+      "target": "2.1",
+      "minVersion": "2.1"
+    }
+  },
+  "targets": {
+    "cheetah-2-pro": {
+      "module": {
+        "watchface": {
+          "path": "watchface/round/index",
+          "main": 1,
+          "editable": 0,
+          "lockscreen": 0
+        }
+      },
+      "platforms": [
+        {
+          "st": "r"
+        }
+      ],
+      "designWidth": 466
+    }
+  },
+  "i18n": {
+    "en-US": {
+      "name": "42R - Four Simple"
+    }
+  },
+  "defaultLanguage": "en-US",
+  "debug": false
+}
