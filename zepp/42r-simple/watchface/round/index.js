@@ -34,7 +34,15 @@ const DATE_TEXT_SIZE = 46
 const STEP_HEIGHT = 80
 const STEP_Y = 289
 const STEP_TEXT_SIZE = 46
-const BACKUP_TICK_MS = 60_000
+// Lowered from 60_000 (v0.5.0) to 5_000 (v0.5.1). The 60s interval left a
+// noticeable wake-stale window: when the JS event loop was suspended during
+// display-off, neither this interval nor Time.onPerMinute fired, and the
+// next tick after wake could be up to 60s later. With 5s we cap the worst
+// case at ~5s. Cost: 12x more JS calls per minute while display is on. Each
+// call is a setProperty no-op when the text didn't change; CPU impact is
+// microseconds. Interval pauses cleanly during display-off (event loop is
+// suspended) so no battery drain there.
+const BACKUP_TICK_MS = 5_000
 
 const MONTHS = [
   'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
@@ -176,6 +184,44 @@ WatchFace({
   build() {
     logger.log(`[${nowStamp()}] build`)
     this.initView()
+  },
+
+  // Undocumented WatchFace lifecycle hooks. The official Zepp docs only
+  // list onInit/build/onDestroy, but multiple third-party watch faces in
+  // the wild use these successfully — confirmed in DotIN13/starfield-
+  // atlantica, Elgenzay/antiburn, alessandroame/weather_forecast_watchface,
+  // bouldersoftware/Amazfit-Watchfaces, BenjaminKobjolke/amazfit_band_7_
+  // watchface, etc. The framework appears to detect them on the WatchFace
+  // object and call them automatically on the corresponding firmware
+  // events (`ui pause` / `ui resume` from the firmware logs).
+  //
+  // Wake-side hooks (onResume, onShow, onReady) call updateDisplay() so
+  // the time refreshes the moment the display wakes — eliminating the
+  // stale-cached-frame moment the user observed on 2026-04-29. Sleep-
+  // side hooks (onPause, onHide) just log, for diagnostic value while
+  // we learn which hooks actually fire on the Cheetah 2 Pro.
+
+  onResume() {
+    logger.log(`[${nowStamp()}] onResume — forcing display refresh`)
+    this.updateDisplay()
+  },
+
+  onShow() {
+    logger.log(`[${nowStamp()}] onShow — forcing display refresh`)
+    this.updateDisplay()
+  },
+
+  onReady() {
+    logger.log(`[${nowStamp()}] onReady — forcing display refresh`)
+    this.updateDisplay()
+  },
+
+  onPause() {
+    logger.log(`[${nowStamp()}] onPause`)
+  },
+
+  onHide() {
+    logger.log(`[${nowStamp()}] onHide`)
   },
 
   onDestroy() {

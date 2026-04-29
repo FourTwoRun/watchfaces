@@ -5,8 +5,8 @@
     "appName": "42R Simple",
     "appType": "watchface",
     "version": {
-      "code": 5,
-      "name": "0.5.0"
+      "code": 6,
+      "name": "0.5.1"
     },
     "vender": "FourTwoRun",
     "description": "Bold, single-color time display in FourTwoRun teal. The simplest watch face FourTwoRun makes.",
